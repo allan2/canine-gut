@@ -7,9 +7,8 @@
 readonly OUTPUT_DIR='output_fastqc'
 mkdir -p $OUTPUT_DIR
 
-logfile="$OUTPUT_DIR/log_$(printf '%(%Y%m%d_%H%M%S)T' $start_time).log"
-
 printf -v start_time '%(%s)T'
+logfile="$OUTPUT_DIR/log_$(printf '%(%Y%m%d_%H%M%S)T' $start_time).log"
 fastqc *.fastq.gz -o $OUTPUT_DIR | tee $logfile
 printf -v end_time '%(%s)T'
 
