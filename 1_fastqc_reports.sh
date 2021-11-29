@@ -15,7 +15,6 @@ printf -v end_time '%(%s)T'
 # Print the elapsed time and write it to the log.
 elapsed=$((end_time - start_time))
 elapsed_msg="Elapsed time: $(($elapsed / 60))m $(($elapsed % 60))s"
-echo $elapsed_msg
 printf %s "$elapsed_msg" | tee -a $logfile
 
 exit 0
