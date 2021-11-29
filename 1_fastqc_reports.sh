@@ -4,19 +4,19 @@
 #SBATCH --mem=3200M
 #SBATCH --time=00:15:00
 
-module load fastqc/0.11.9
-
-readonly OUTPUT_DIR="output_fastqc"
+readonly OUTPUT_DIR='output_fastqc'
 mkdir -p $OUTPUT_DIR
 
+logfile="$OUTPUT_DIR/log_$(printf '%(%Y%m%d_%H%M%S)T' $start_time).log"
+
 printf -v start_time '%(%s)T'
-sleep 2
-printf 'Hello\n'
-fastqc *.fastq.gz -o ${OUTPUT_DIR} | tee ${OUTPUT_DIR}/log_$(date -d @${start_time} +%Y%m%d_%H%M%S).log
+fastqc *.fastq.gz -o $OUTPUT_DIR | tee $logfile
 printf -v end_time '%(%s)T'
 
+# Print the elapsed time and write it to the log.
 elapsed=$((end_time - start_time))
-elapsed_txt="Elapsed time: (($elapsed / 60))m $(($elapsed % 60))s"
-echo $elapsed_txt
-printf "%s" $elapsed_txt
+elapsed_msg="Elapsed time: $(($elapsed / 60))m $(($elapsed % 60))s"
+echo $elapsed_msg
+printf %s "$elapsed_msg" | tee -a $logfile
+
 exit 0
