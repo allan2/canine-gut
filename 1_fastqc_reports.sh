@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 #SBATCH --job-name=canine-gut-fastqc
 #SBATCH --mem=3200M

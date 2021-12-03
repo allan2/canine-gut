@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 # This is an annotated version for someone who is new to shell scripts.
 #
