@@ -4,6 +4,8 @@
 #SBATCH --mem=3200M
 #SBATCH --time=00:15:00
 
+module load fastqc/0.11.9
+
 readonly OUTPUT_DIR='output_fastqc'
 mkdir -p $OUTPUT_DIR
 

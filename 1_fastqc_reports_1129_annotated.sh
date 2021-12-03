@@ -11,6 +11,8 @@
 #SBATCH --mem=3200M
 #SBATCH --time=00:15:00
 
+module load fastqc/0.11.9
+
 # We define the output directory. It's easier to see where things go and to change variables when we put it at the top.
 readonly OUTPUT_DIR='output_fastqc'
 
