@@ -22,6 +22,10 @@
 # $ source auto_trim.sh --help
 # Supported extensions are: <.fq> or <.fastq> or <.fq.gz> or <.fastq.gz>
 
+#SBATCH --job-name=canine-gut-trim
+#SBATCH --mem=3200M
+#SBATCH --time=00:15:00
+
 module load trimmomatic/0.39
 
 red=$(tput setaf 1)
