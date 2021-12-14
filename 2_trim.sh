@@ -83,7 +83,6 @@ else
 						R2_unpaired=${sample_name}_R2_unpaired${extension}
 						echo -e "\n${yellow}[Running trimmomatic for sample] ${sample_name} at $(whoami)${reset}\n"
 						date && time java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar PE \
-							-threads 8 \
 							-phred33 $R1 $R2 $R1_paired $R1_unpaired $R2_paired $R2_unpaired \
 							SLIDINGWINDOW:4:20
 						rm *unpaired*
