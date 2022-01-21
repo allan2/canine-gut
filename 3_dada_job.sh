@@ -1,12 +1,12 @@
 #!/bin/env bash
 
-#SBATCH --job-name=canine-gut-dada2
-#SBATCH --mem=3200M
-#SBATCH --time=00:15:00
+#SBATCH --job-name=canine-gut-dada2_taxonomy
+#SBATCH --mem=64000M
+#SBATCH --time=04:00:00
 
 module load gcc/9.3.0 r-bundle-bioconductor/3.14
 
-readonly OUTPUT_DIR='output_dada2'
+readonly OUTPUT_DIR='output_dada2_taxonomy'
 mkdir -p $OUTPUT_DIR
 
 printf -v start_time '%(%s)T'
