@@ -6,15 +6,18 @@ df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
 # Drop the sequence column.
 df <- df[, !(names(df) == "Sequence")]
 
-num_sample_cols <- sum(!
-colnames(df) %in% c(
+# Define taxanomic columns.
+tx_cols <- c(
     "Kingdom",
     "Phylum",
     "Class",
     "Order",
     "Family",
     "Genus"
-))
+)
+
+num_sample_cols <- sum(!
+colnames(df) %in% tx_cols)
 
 # Convert to numeric. This produces NA warnings.
 df[1:num_sample_cols] <- sapply(
@@ -176,3 +179,40 @@ ggplot(sums_all, aes(x = reorder(genus, -read_count.y), y = read_count.x)) +
         axis.ticks.x = element_blank()
     )
 ggsave("output/2_genus_all_boxplot.png")
+
+# box plot by sample
+
+# We want a column with sample number and the read count.
+# Turn the sample attributes into a single attribute, "sample number".
+
+# Only keep sample columns.
+sample_df <- df[, !colnames(df) %in% tx_cols]
+nrow(data.frame(x = unlist(sample_df)))
+colnames(sample_df) <- gsub("Sample", "", colnames(sample_df))
+reshaped <- sample_df %>% tidyr::gather(
+    sample_num, read_count, seq_len(ncol(sample_df))
+)
+if (!(sum(reshaped$read_count) == sum(sample_df))) {
+    stop("Something went wrong reshaping")
+}
+
+reshaped$sample_num <- as.numeric(reshaped$sample_num)
+
+ggplot(reshaped, aes(
+    x = sample_num,
+    y = read_count, group = cut_interval(sample_num, length = 1)
+)) +
+    geom_boxplot(
+        outlier.colour = "black",
+        outlier.shape = 16,
+        outlier.size = 2,
+        notch = FALSE
+    ) +
+    xlab("Sample Number") +
+    ylab("Number of Reads") +
+    ggtitle("Read Count by Sample Number") +
+    # Center the title.
+    theme(
+        plot.title = element_text(hjust = 0.5)
+    )
+ggsave("output/2_boxplot_sample_number.png")
