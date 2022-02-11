@@ -50,6 +50,10 @@ ggplot(sums, aes(x = reorder(id, -read_count), y = read_count)) +
     )
 ggsave("output/1_reads_by_otu.png")
 
+sums <- sums[order(sums$read_count,
+    decreasing = TRUE
+), ]
+
 # Read count totals per genus group
 genus_counts <- aggregate(sums$read_count,
     by = list(genus = sums$genus), FUN = sum
@@ -85,13 +89,16 @@ ggplot(genus_counts_top_20, aes(
     ylab("Number of Reads") +
     ggtitle("Read Count by Genus (top 20)") +
     # Center the title.
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme(axis.text.x = element_text(
-        angle = 90,
-        vjust = 0.5, hjust = 1
-    )) +
-    # Don't show scientific notation.
-    scale_y_continuous(labels = scales::comma)
+    theme(
+        plot.title = element_text(hjust = 0.5),
+        # Rotate the x-axis labels.
+        axis.text.x = element_text(
+            angle = 90,
+            vjust = 0.5, hjust = 1
+        )
+    )
+# Don't show scientific notation.
+scale_y_continuous(labels = scales::comma)
 ggsave("output/2_reads_by_genus_top_20.png")
 
 # Pie chart
@@ -120,3 +127,52 @@ ggplot(genus_counts_top_7, aes(
     ggtitle("Read Count by Genus") +
     theme_void()
 ggsave("output/3_pie_chart_reads_by_genus_top_7.png")
+
+# Inner join with the top 20 genuses.
+sums_top_20 <- merge(x = sums, y = genus_counts_top_20, by = "genus")
+
+# Box plots by genus
+ggplot(sums_top_20, aes(
+    x = reorder(genus, -read_count.y),
+    y = read_count.x
+)) +
+    geom_boxplot(
+        outlier.colour = "black",
+        outlier.shape = 16,
+        outlier.size = 2,
+        notch = FALSE
+    ) +
+    xlab("Genus") +
+    ylab("Number of Reads") +
+    ggtitle("Read Count by Genus") +
+    # Center the title.
+    theme(
+        plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(
+            angle = 90,
+            vjust = 0.5, hjust = 1
+        )
+    )
+ggsave("output/2_genus_top_20_boxplot.png")
+
+# We merge to get the group by totals to sort on for the box plot.
+sums_all <- merge(x = sums, y = genus_counts, by = "genus")
+
+ggplot(sums_all, aes(x = reorder(genus, -read_count.y), y = read_count.x)) +
+    geom_boxplot(
+        outlier.colour = "black",
+        outlier.shape = 16,
+        outlier.size = 2,
+        notch = FALSE
+    ) +
+    xlab("Genus") +
+    ylab("Number of Reads") +
+    ggtitle("Read Count by Genus") +
+    # Center the title.
+    theme(
+        plot.title = element_text(hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()
+    )
+ggsave("output/2_genus_all_boxplot.png")
