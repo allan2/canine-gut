@@ -1,4 +1,5 @@
 library(ggplot2)
+library(tidyverse)
 
 df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
     sep = "\t", header = TRUE
@@ -204,8 +205,6 @@ ggplot(reshaped, aes(
 )) +
     geom_boxplot(
         outlier.colour = "black",
-        outlier.shape = 16,
-        outlier.size = 2,
         notch = FALSE
     ) +
     xlab("Sample Number") +
