@@ -7,6 +7,9 @@ df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
 # Drop the sequence column.
 df <- df[, !(names(df) == "Sequence")]
 
+# Filter out Sutterella due to anomalies.
+df <- df[!(df$Taxonomy == "Sutterella"), ]
+
 # Define taxanomic columns.
 tx_cols <- c(
     "Kingdom",
@@ -35,6 +38,8 @@ sums <- data.frame(cbind(seq(sums), sums, df$Genus))
 colnames(sums) <- c("id", "read_count", "genus")
 sums$read_count <- as.numeric(sums$read_count)
 
+median_sums <- median(sums$read_count)
+
 # Bar plot reads per OTU.
 ggplot(sums, aes(x = reorder(id, -read_count), y = read_count)) +
     geom_bar(
@@ -47,10 +52,12 @@ ggplot(sums, aes(x = reorder(id, -read_count), y = read_count)) +
     # Center the title.
     theme(
         plot.title = element_text(hjust = 0.5),
-        # Hide the x axis labels, i.e., OTU ID.
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank()
+    ) +
+    geom_hline(
+        yintercept = median_sums,
+        color = "red"
     )
 ggsave("output/1_reads_by_otu.png")
 
@@ -80,18 +87,20 @@ genus_counts_top_20[
     which(genus_counts_top_20$genus == "[Ruminococcus]"),
 ][1] <- "Rumminococcus"
 
+genus_counts_top_20$read_count_log <- log2(genus_counts_top_20$read_count)
+
 # Bar plot reads per OTU.
 ggplot(genus_counts_top_20, aes(
-    x = reorder(genus, -read_count),
-    y = read_count
+    x = reorder(genus, -read_count_log),
+    y = read_count_log
 )) +
     geom_bar(
         stat = "identity",
         fill = "blue"
     ) +
     xlab("Genus") +
-    ylab("Number of Reads") +
-    ggtitle("Read Count by Genus (top 20)") +
+    ylab("Log2(Number of Reads)") +
+    ggtitle("Log2 of Total Read Count by Genus (top 20)") +
     # Center the title.
     theme(
         plot.title = element_text(hjust = 0.5),
@@ -119,6 +128,18 @@ if (!(sum(genus_counts$read_count) == sum(genus_counts_top_7$read_count))) {
     stop("Pie chart total is incorrect")
 }
 
+# Colour-blind friendly
+cb_palette <- c(
+    "#999999",
+    "#e69f00",
+    "#56b4e9",
+    "#009e73",
+    "#f0E442",
+    "#0072b2",
+    "#d55e00",
+    "#cc79a7"
+)
+
 ggplot(genus_counts_top_7, aes(
     x = "",
     y = read_count,
@@ -129,16 +150,21 @@ ggplot(genus_counts_top_7, aes(
     ) +
     coord_polar("y", start = 0) +
     ggtitle("Read Count by Genus") +
-    theme_void()
+    scale_fill_manual(values = cb_palette) +
+    theme_void() +
+    theme(
+        plot.title = element_text(hjust = 0.5)
+    )
 ggsave("output/3_pie_chart_reads_by_genus_top_7.png")
 
 # Inner join with the top 20 genuses.
 sums_top_20 <- merge(x = sums, y = genus_counts_top_20, by = "genus")
+sums_top_20$read_count_log <- log2(sums_top_20$read_count.x)
 
 # Box plots by genus
 ggplot(sums_top_20, aes(
-    x = reorder(genus, -read_count.y),
-    y = read_count.x
+    x = reorder(genus, -read_count_log),
+    y = read_count_log
 )) +
     geom_boxplot(
         outlier.colour = "black",
@@ -147,8 +173,8 @@ ggplot(sums_top_20, aes(
         notch = FALSE
     ) +
     xlab("Genus") +
-    ylab("Number of Reads") +
-    ggtitle("Read Count by Genus") +
+    ylab("Log2(Number of Reads)") +
+    ggtitle("Log2(Read Count) by Genus") +
     # Center the title.
     theme(
         plot.title = element_text(hjust = 0.5),
@@ -161,8 +187,9 @@ ggsave("output/2_genus_top_20_boxplot.png")
 
 # We merge to get the group by totals to sort on for the box plot.
 sums_all <- merge(x = sums, y = genus_counts, by = "genus")
+sums_all$read_count_log <- log2(sums_all$read_count.x)
 
-ggplot(sums_all, aes(x = reorder(genus, -read_count.y), y = read_count.x)) +
+ggplot(sums_all, aes(x = reorder(genus, -read_count.y), y = read_count_log)) +
     geom_boxplot(
         outlier.colour = "black",
         outlier.shape = 16,
@@ -175,7 +202,6 @@ ggplot(sums_all, aes(x = reorder(genus, -read_count.y), y = read_count.x)) +
     # Center the title.
     theme(
         plot.title = element_text(hjust = 0.5),
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank()
     )
