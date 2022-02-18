@@ -16,7 +16,7 @@ tx_cols <- c(
     "Genus"
 )
 # Read count data
-df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
+df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
     sep = "\t", header = TRUE
 )
 # Drop the sequence column.
