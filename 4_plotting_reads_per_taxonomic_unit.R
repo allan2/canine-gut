@@ -8,7 +8,7 @@ df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
 df <- df[, !(names(df) == "Sequence")]
 
 # Filter out Sutterella due to anomalies.
-df <- df[!(df$Taxonomy == "Sutterella"), ]
+df <- df[!(df$Genus == "Sutterella"), ]
 
 # Define taxanomic columns.
 tx_cols <- c(
@@ -78,9 +78,11 @@ genus_counts <- genus_counts[order(genus_counts$read_count,
 genus_counts_top_20 <- genus_counts[1:20, ]
 
 # Rename the missing genus.
-genus_counts_top_20[
-    which(genus_counts_top_20$genus == "0"),
-][1] <- "Unknown"
+if (sum(genus_counts_top_20$genus == "0")) {
+    genus_counts_top_20[
+        which(genus_counts_top_20$genus == "0"),
+    ][1] <- "Unknown"
+}
 
 # manual fix of names
 genus_counts_top_20[
