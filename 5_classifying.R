@@ -123,7 +123,7 @@ for (m in m_values) {
     tune_grid <- expand.grid(.mtry = m)
     for (n_tree in n_trees) {
         start_time <- Sys.time()
-        fit <- train_aggression()(n_tree, tune_grid)
+        fit <- train_aggression(n_tree, tune_grid)
         end_time <- Sys.time()
         elapsed <- end_time - start_time
         print(elapsed)
