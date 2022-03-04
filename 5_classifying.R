@@ -4,7 +4,7 @@ library(tidyverse)
 library(ggplot2)
 library(plotROC)
 
-sample_mode <- TRUE
+sample_mode <- FALSE
 
 # Read count data.
 df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
@@ -12,7 +12,8 @@ df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
 )
 # Transpose so that OTUs are columns. The index is "SampleN".
 df <- as.data.frame(t(df))
-# We don't need the full sequence as the column names. Let's replace them with numbers.
+# We don't need the full sequence as the column names.
+# Replace them with numbers.
 colnames(df) <- seq_len(length(colnames(df)))
 
 
@@ -35,62 +36,104 @@ df$anxiety <- factor(df$anxiety)
 df$aggression <- factor(df$aggression)
 
 if (sample_mode) {
-    df <- df[sample(nrow(df), 20), ]
+    df <- df[sample(nrow(df), 200), ]
 }
 
-set.seed(1251)
+# 10-fold repeating three times
+ctrl <- caret::trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 3,
+    classProbs = TRUE,
+    savePredictions = TRUE # for ROC plotting
+)
 
-# Train a random forest for a given classifier.
+set.seed(1)
+
+df_anx <- subset(df, select = -c(aggression))
+df_aggr <- subset(df, select = -c(anxiety))
+
+
 train_anxiety <- function(n_tree, tune_grid) {
-    # 10-fold repeating three times
-    ctrl <- caret::trainControl(
-        method = "repeatedcv",
-        number = 10,
-        repeats = 3,
-        classProbs = TRUE,
-        savePredictions = TRUE # for ROC plotting
-    )
-
-    # Train.
-    start_time <- Sys.time()
-    fit <- caret::train(
+    caret::train(
         anxiety ~ .,
-        data = df,
+        data = df_anx,
         method = "rf",
         tuneGrid = tune_grid,
         trControl = ctrl,
         metric = "Accuracy",
-        ntree = n_tree
+        ntree = n_tree,
+        importance = TRUE
     )
-    end_time <- Sys.time()
-    elapsed <- end_time - start_time
-    print(elapsed)
-    fit
 }
 
+train_aggression <- function(n_tree, tune_grid) {
+    caret::train(
+        aggression ~ .,
+        data = df_aggr,
+        method = "rf",
+        tuneGrid = tune_grid,
+        trControl = ctrl,
+        metric = "Accuracy",
+        ntree = n_tree,
+        importance = TRUE
+    )
+}
 
 n_trees <- seq(100, 500, 100)
-m_values <- c(log(ncol(df)), sqrt(ncol(df)), ncol(df) / 4)
+# Because we remove either accuracy or aggression column
+n_col <- ncol(df) - 1
+m_values <- c(log(n_col), sqrt(n_col), (n_col / 4))
 
-# Store results
+if (sample_mode) {
+    m_values <- m_values[1]
+    n_trees <- n_trees[1]
+}
+
+# Anxiety
 models <- list()
+m_idx <- 0
 for (m in m_values) {
+    m_idx <- m_idx + 1
     # Use the entire data set because we have few dogs.
-    tune_grid <- expand.grid(.mtry = c(sqrt(ncol(df))))
+    tune_grid <- expand.grid(.mtry = m)
     for (n_tree in n_trees) {
+        start_time <- Sys.time()
         fit <- train_anxiety(n_tree, tune_grid)
+        end_time <- Sys.time()
+        elapsed <- end_time - start_time
+        print(elapsed)
         models[[toString(n_tree)]] <- fit
+        res <- data.frame(fit$results)
+        write.table(res, paste0(
+            "output_anx", "m", m_idx, "ntree",
+            n_tree, ".csv"
+        ),
+        append = FALSE, sep = ",", row.names = TRUE, col.names = TRUE
+        )
     }
 }
-results <- caret::resamples(models)
-summary(results)
-png("output/5_dotplot_accuracy_anxiety.png")
-lattice::dotplot(results)
-dev.off()
-# TODO: Only labels with 2 classes supported
-ggplot(fit$pred, aes(
-    m = fit$pred$M,
-    d = fit$pred$obs
-)) +
-    geom_roc(hjust = -0.4, vjust = 1.5) +
-    coord_equal()
+
+# Aggression
+models <- list()
+m_idx <- 0
+for (m in m_values) {
+    m_idx <- m_idx + 1
+    # Use the entire data set because we have few dogs.
+    tune_grid <- expand.grid(.mtry = m)
+    for (n_tree in n_trees) {
+        start_time <- Sys.time()
+        fit <- train_aggression()(n_tree, tune_grid)
+        end_time <- Sys.time()
+        elapsed <- end_time - start_time
+        print(elapsed)
+        models[[toString(n_tree)]] <- fit
+        res <- data.frame(fit$results)
+        write.table(res, paste0(
+            "output_aggr", "m", m_idx, "ntree",
+            n_tree, ".csv"
+        ),
+        append = FALSE, sep = ",", row.names = TRUE, col.names = TRUE
+        )
+    }
+}
