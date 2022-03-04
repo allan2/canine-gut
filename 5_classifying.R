@@ -1,8 +1,4 @@
 library(caret)
-library(mlbench)
-library(tidyverse)
-library(ggplot2)
-library(plotROC)
 
 sample_mode <- FALSE
 
