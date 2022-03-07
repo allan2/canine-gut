@@ -1,13 +1,8 @@
-seq_taxa <- function(keep_suterella) {
+seq_taxa <- function() {
     df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
         sep = "\t", header = TRUE, row.names = NULL
     )
     colnames(df)[1] <- "seq"
-
-    if (!keep_suterella) {
-        # Filter out Sutterella due to anomalies.
-        df <- df[!(df$Genus == "Sutterella"), ]
-    }
 
     # Define taxanomic columns.
     tx_cols <- c(

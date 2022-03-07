@@ -9,7 +9,7 @@ prep <- function(keep_suterella) {
     )
     colnames(df)[1] <- "seq"
     # If the keep_suterella flag is set to false, Suterella will be removed.
-    taxa <- seq_taxa(keep_suterella)
+    taxa <- seq_taxa()
     # Inner join on the sequence ID (the index).
     df_a <- merge(df, taxa, by = "seq")
 
@@ -51,7 +51,8 @@ train_ctrl <- function() {
     )
 }
 
-train_anxiety <- function(df, n_tree, tune_grid) {
+train_anxiety <- function(df, ctrl, n_tree, tune_grid) {
+    print(nrow(df))
     caret::train(
         anxiety ~ .,
         data = df,
@@ -64,7 +65,8 @@ train_anxiety <- function(df, n_tree, tune_grid) {
     )
 }
 
-train_aggression <- function(df, n_tree, tune_grid) {
+train_aggression <- function(df, ctrl, n_tree, tune_grid) {
+    print(nrow(df))
     caret::train(
         aggression ~ .,
         data = df,
@@ -75,4 +77,40 @@ train_aggression <- function(df, n_tree, tune_grid) {
         ntree = n_tree,
         importance = TRUE
     )
+}
+
+output_filename <- function(label, idx) {
+    paste0(label, idx, ".csv")
+}
+
+
+run <- function(label, df, ctrl, train_fn) {
+    n_trees <- seq(100, 500, 100)
+    # Because we remove either accuracy or aggression column
+    n_col <- ncol(df) - 1
+    m_values <- c(log(n_col), sqrt(n_col), (n_col / 4))
+    ctrl <- train_ctrl()
+    idx <- 0
+    for (m in m_values) {
+        print(idx)
+        idx <- idx + 1
+        # Use the entire data set because we have few dogs.
+        tune_grid <- expand.grid(.mtry = m)
+        for (n_tree in n_trees) {
+            start_time <- Sys.time()
+            fit <- train_fn(df, ctrl, n_tree, tune_grid)
+            end_time <- Sys.time()
+            elapsed <- end_time - start_time
+            print(elapsed)
+            res <- data.frame(fit$results)
+            filename <- paste0(label, idx, ".csv")
+            write.table(res,
+                filename,
+                append = FALSE,
+                sep = ",",
+                row.names = FALSE,
+                col.names = TRUE
+            )
+        }
+    }
 }

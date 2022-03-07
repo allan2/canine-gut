@@ -9,8 +9,7 @@ df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
     sep = "\t", header = TRUE, row.names = NULL
 )
 colnames(df)[1] <- "seq"
-# Suturella gets removed when we filter on family and genus anyway.
-taxa <- seq_taxa(keep_suterella = TRUE)
+taxa <- seq_taxa()
 # Filter taxa to keep only the families and genuses we want.
 taxa <- taxa[
     (taxa$Family %in% family_keep |
@@ -45,38 +44,9 @@ df$anxiety <- factor(df$anxiety)
 # Remove the aggression column.
 df_anx <- subset(df, select = -c(aggression))
 
-# df_anx <- df[sample(nrow(df_anx), 200), ]
+# Sample
+# df_anx <- df_anx[sample(nrow(df_anx), 200), ]
 rm(df)
 
 set.seed(1)
-n_trees <- seq(100, 500, 100)
-n_col <- ncol(df_anx)
-m_values <- c(log(n_col), sqrt(n_col), (n_col / 4))
-ctrl <- train_ctrl()
-
-# Anxiety
-models <- list()
-idx <- 0
-for (m in m_values) {
-    idx <- idx + 1
-    # Use the entire data set because we have few dogs.
-    tune_grid <- expand.grid(.mtry = m)
-    for (n_tree in n_trees) {
-        start_time <- Sys.time()
-        fit <- train_anxiety(df_anx, n_tree, tune_grid)
-        end_time <- Sys.time()
-        elapsed <- end_time - start_time
-        print(elapsed)
-        models[[toString(n_tree)]] <- fit
-        res <- data.frame(fit$results)
-        filename <- paste0("output_anx_fam", idx, ".csv")
-        write.table(res,
-            filename,
-            header = FALSE,
-            append = FALSE,
-            sep = ",",
-            row.names = TRUE,
-            col.names = TRUE
-        )
-    }
-}
+run("anx_fam", df_anx, ctrl, train_anxiety)
