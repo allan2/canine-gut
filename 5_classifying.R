@@ -1,5 +1,4 @@
 source("find_hyperparams.R")
-source("taxa.R")
 
 # The sample dataset
 df <- prep()

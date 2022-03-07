@@ -1,17 +1,37 @@
-source("taxa.R")
 library(caret)
 
+seq_taxa <- function() {
+    df <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
+        sep = "\t", header = TRUE, row.names = 1
+    )
+
+    # Define taxanomic columns.
+    tx_cols <- c(
+        "seq",
+        "Kingdom",
+        "Phylum",
+        "Class",
+        "Order",
+        "Family",
+        "Genus"
+    )
+    # Only keep taxa columns.
+    df[, colnames(df) %in% tx_cols]
+}
+
 # Reads the data into the form we want.
-prep <- function(keep_suterella) {
+prep <- function() {
     # Read count data.
     df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
-        sep = "\t", header = TRUE, row.names = NULL
+        sep = "\t", header = TRUE, row.names = 1
     )
-    colnames(df)[1] <- "seq"
-    # If the keep_suterella flag is set to false, Suterella will be removed.
-    taxa <- seq_taxa()
-    # Inner join on the sequence ID (the index).
-    df_a <- merge(df, taxa, by = "seq")
+    # num_rows <- nrow(df)
+    # taxa <- seq_taxa()
+    # # Inner join on the sequence ID (the index).
+    # df <- merge(df, taxa, by = 0)
+    # if (num_rows != nrow(df)) {
+    #     stop("Inner join with the taxa table reduced the number of rows")
+    # }
 
     # Transpose so that OTUs are columns. The index is "SampleN".
     df <- as.data.frame(t(df))
@@ -24,16 +44,21 @@ prep <- function(keep_suterella) {
         header = TRUE, row.names = 1
     )
 
+    if (nrow(df) != nrow(sample_vars)) {
+        stop("Number of samples found does not match")
+    }
+
     # Only keep the two classifiers.
     colnames(sample_vars) <- tolower(colnames(sample_vars))
     sample_vars <- sample_vars[, names(sample_vars) %in% c(
         "anxiety", "aggression"
     )]
 
-    # Left join.
+    # Inner join.
     # We now have a data frame with sample, read_count, anxiety, and aggression.
-    df <- merge(x = df, y = sample_vars, all.x = TRUE)
-
+    df <- merge(x = df, y = sample_vars, by = 0)
+    # A "Row.names" column was created. Remove it.
+    df <- subset(df, select = -c(Row.names))
     # Convert classifiers to factors.
     df$anxiety <- factor(df$anxiety)
     df$aggression <- factor(df$aggression)

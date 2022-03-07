@@ -1,4 +1,3 @@
-source("taxa.R")
 source("find_hyperparams.R")
 
 family_keep <- c("Bacteroidaceae", "Oscillospiraceae", "Ruminococcaceae")
@@ -8,7 +7,6 @@ genus_keep <- c("Blautia", "Faecalibacterium", "Bacteroides")
 df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
     sep = "\t", header = TRUE, row.names = NULL
 )
-colnames(df)[1] <- "seq"
 taxa <- seq_taxa()
 # Filter taxa to keep only the families and genuses we want.
 taxa <- taxa[
@@ -16,7 +14,7 @@ taxa <- taxa[
         taxa$Genus %in% genus_keep),
 ]
 # Inner join on the sequence ID (the index).
-df_a <- merge(df, taxa, by = "seq")
+df <- merge(df, taxa, by = "seq")
 
 # Transpose so that OTUs are columns. The index is "SampleN".
 df <- as.data.frame(t(df))
@@ -37,7 +35,7 @@ sample_vars <- sample_vars[, names(sample_vars) %in% c(
 
 # Left join.
 # We now have a data frame with sample, read_count, anxiety, and aggression.
-df <- merge(x = df, y = sample_vars, all.x = TRUE)
+df <- merge(x = df, y = sample_vars)
 
 # Convert classifiers to factors.
 df$anxiety <- factor(df$anxiety)
