@@ -8,7 +8,7 @@
 
 module load gcc/9.3.0 r-bundle-bioconductor/3.14
 
-readonly OUTPUT_DIR='find-hyperparams-fam'
+readonly OUTPUT_DIR='find-hyperparams'
 mkdir -p $OUTPUT_DIR
 
 printf -v start_time '%(%s)T'

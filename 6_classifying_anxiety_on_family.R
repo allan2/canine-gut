@@ -45,9 +45,12 @@ df$anxiety <- factor(df$anxiety)
 # Remove the aggression column.
 df_anx <- subset(df, select = -c(aggression))
 
+# df_anx <- df[sample(nrow(df_anx), 200), ]
+rm(df)
+
 set.seed(1)
 n_trees <- seq(100, 500, 100)
-n_col <- ncol(df)
+n_col <- ncol(df_anx)
 m_values <- c(log(n_col), sqrt(n_col), (n_col / 4))
 ctrl <- train_ctrl()
 
