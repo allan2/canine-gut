@@ -1,35 +1,20 @@
 library(caret)
 
 # Reads the data into the form we want.
-prep <- function(select_families = FALSE) {
-    # Read count data.
-    df <- read.table("data/SeqTab_NoChim_SamplesInColumns_in24Dogs.tsv",
-        sep = "\t", header = TRUE, row.names = 1
-    )
+# samples_df - data frame of samples with sequences as rows
+#              and samples as columns
+# taxa - data frame with taxanomical data.
+filter_taxa <- function(df, taxa) {
+    # Inner join on the sequence ID (the index).
+    df <- merge(df, taxa, by = 0)
+    # Remove taxa columns and the "Row.name" column that was created after merge.
+    subset(df, select = -c(Row.names, Class, Order, Family, Genus))
+}
 
-    if (select_families) {
-        taxa <- read.table("data/SeqTab_NoChim_SamplesInColumns_Taxa.tsv",
-            sep = "\t", header = TRUE, row.names = 1
-        )
-        # Only keep taxa columns.
-        taxa <- taxa[, colnames(taxa) %in% c("Family", "Genus")]
 
-        family_keep <- c(
-            "Bacteroidaceae",
-            "Oscillospiraceae", "Ruminococcaceae"
-        )
-        genus_keep <- c("Blautia", "Faecalibacterium", "Bacteroides")
-        # Filter taxa to keep only the families and genuses we want.
-        taxa <- taxa[
-            (taxa$Family %in% family_keep |
-                taxa$Genus %in% genus_keep),
-        ]
-        # Inner join on the sequence ID (the index).
-        df <- merge(df, taxa, by = 0)
-        # Remove taxa columns and the "Row.name" column that was created after merge.
-        df <- subset(df, select = -c(Row.names, Family, Genus))
-    }
+# Reads the data into the form we want.
 
+prep <- function(df) {
     # Transpose so that OTUs are columns. The index is "SampleN".
     df <- as.data.frame(t(df))
     # We don't need the full sequence as the column names.
@@ -99,20 +84,18 @@ train_aggression <- function(df, ctrl, n_tree, tune_grid) {
     )
 }
 
-output_filename <- function(label, idx) {
-    paste0(label, idx, ".csv")
-}
+
 
 # The function to run the training through different values of m and n_tree
 # Output is saved as a csv.
 #
-# label: label for the output file, e.g., "anx" or "aggr"
+# job_name: e.g., anx_24, aggr_full
 # df: data frame with the samples as rows,
 #     the sequences as columns, and the classifier as a column
 # ctrl: output of train_ctrl()
 # train_fn: the training function, such as train_anxiety or train_aggression
-run <- function(label, df, ctrl, train_fn) {
-    print(paste0("Running ", label, "..."))
+run <- function(job_name, df, ctrl, train_fn) {
+    print(paste0("Running ", job_name, "..."))
     n_trees <- seq(100, 500, 100)
     # Because we remove either accuracy or aggression column
     n_col <- ncol(df) - 1
@@ -130,19 +113,12 @@ run <- function(label, df, ctrl, train_fn) {
             end_time <- Sys.time()
             elapsed <- end_time - start_time
             print(paste0(
-                "Iteration ", idx, "\tm: ", round(m, 1),
-                "\tn_tree: ", n_tree, "\tElapsed: ", round(elapsed, 1), " s"
+                "Iteration ", idx, "    m: ", round(m, 1),
+                "    n_tree: ", n_tree, "    Elapsed: ", round(elapsed, 1), " s"
             ))
             res <- data.frame(fit$results)
             results <- rbind(results, res)
         }
     }
-    filename <- paste0(label, ".csv")
-    write.table(results,
-        filename,
-        append = FALSE,
-        sep = ",",
-        row.names = TRUE,
-        col.names = NA # leave a blank in the header for the data frame index
-    )
+    cbind(job_name = job_name, results)
 }
