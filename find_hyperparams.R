@@ -117,6 +117,8 @@ run <- function(job_name, df, ctrl, train_fn) {
                 "    n_tree: ", n_tree, "    Elapsed: ", round(elapsed, 1), " s"
             ))
             res <- data.frame(fit$results)
+            res$m <- m
+            res$n_tree <- n_tree
             results <- rbind(results, res)
         }
     }
