@@ -87,7 +87,7 @@ aggr_all <- run("aggr_full", df_aggr_all, ctrl, train_aggression)
 
 results <- rbind(anx_24, aggr_24, anx_all, aggr_all)
 write.table(results,
-    "results.csv",
+    "results_ilr.csv",
     append = FALSE,
     sep = ",",
     row.names = TRUE,
